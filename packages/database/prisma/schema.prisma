@@ -1,0 +1,96 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id        String    @id @default(uuid())
+  email     String    @unique
+  name      String?
+  createdAt DateTime  @default(now())
+  business  Business?
+}
+
+model Business {
+  id                String    @id @default(uuid())
+  userId            String    @unique
+  user              User      @relation(fields: [userId], references: [id])
+  name              String
+  slug              String    @unique
+  category          String
+  description       String?
+  logoUrl           String?
+  coverUrl          String?
+  timezone          String
+  country           String
+  workingHours      Json
+  bufferMinutes     Int       @default(0)
+  bookingWindowDays Int       @default(30)
+  cancellationHours Int       @default(24)
+  noShowFee         Float?
+  depositPercent    Float?
+  stripeAccountId   String?
+  googlePlaceId     String?
+  reviewsEnabled    Boolean   @default(false)
+  createdAt         DateTime  @default(now())
+  staff             Staff[]
+  services          Service[]
+  bookings          Booking[]
+}
+
+model Staff {
+  id           String    @id @default(uuid())
+  businessId   String
+  business     Business  @relation(fields: [businessId], references: [id])
+  name         String
+  photoUrl     String?
+  workingHours Json
+  isActive     Boolean   @default(true)
+  bookings     Booking[]
+}
+
+model Service {
+  id              String    @id @default(uuid())
+  businessId      String
+  business        Business  @relation(fields: [businessId], references: [id])
+  name            String
+  durationMinutes Int
+  price           Float
+  description     String?
+  isActive        Boolean   @default(true)
+  bookings        Booking[]
+}
+
+model Booking {
+  id                    String   @id @default(uuid())
+  businessId            String
+  business              Business @relation(fields: [businessId], references: [id])
+  serviceId             String
+  service               Service  @relation(fields: [serviceId], references: [id])
+  staffId               String?
+  staff                 Staff?   @relation(fields: [staffId], references: [id])
+  clientName            String
+  clientEmail           String
+  clientPhone           String
+  startTime             DateTime
+  endTime               DateTime
+  status                String   @default("confirmed")
+  stripePaymentIntentId String?
+  reminderSent24hr      Boolean  @default(false)
+  reminderSent2hr       Boolean  @default(false)
+  reviewRequestSent     Boolean  @default(false)
+  createdAt             DateTime @default(now())
+}
+
+model Waitlist {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  businessType String
+  country      String
+  createdAt    DateTime @default(now())
+}

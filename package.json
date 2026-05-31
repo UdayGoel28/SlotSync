@@ -1,0 +1,28 @@
+{
+  "name": "slotsync",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "type-check": "turbo type-check",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "db:migrate": "npm run migrate --workspace=@slotsync/database",
+    "db:generate": "npm run generate --workspace=@slotsync/database",
+    "db:push": "npm run push --workspace=@slotsync/database",
+    "db:studio": "npm run studio --workspace=@slotsync/database",
+    "clean": "turbo clean && rm -rf node_modules"
+  },
+  "devDependencies": {
+    "turbo": "^2.5.0",
+    "prettier": "^3.5.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "packageManager": "npm@10.0.0"
+}
