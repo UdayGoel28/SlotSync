@@ -3,15 +3,59 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Logo } from "@/components/shared/Logo";
+import { completeOnboarding } from "@/app/actions/onboarding";
 
 const steps = ["Business Info", "Services", "Working Hours", "Review"];
+
+const defaultHours = {
+  Monday: { start: "09:00", end: "17:00", active: true },
+  Tuesday: { start: "09:00", end: "17:00", active: true },
+  Wednesday: { start: "09:00", end: "17:00", active: true },
+  Thursday: { start: "09:00", end: "17:00", active: true },
+  Friday: { start: "09:00", end: "17:00", active: true },
+  Saturday: { start: "09:00", end: "17:00", active: false },
+  Sunday: { start: "09:00", end: "17:00", active: false },
+};
 
 export default function OnboardingPage() {
   const [currentStep, setCurrentStep] = useState(0);
   const router = useRouter();
 
-  const handleComplete = () => {
-    router.push("/dashboard");
+  // Form State
+  const [businessName, setBusinessName] = useState("");
+  const [category, setCategory] = useState("");
+  const [country, setCountry] = useState("");
+  const [workingHours, setWorkingHours] = useState(defaultHours);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleWorkingHoursChange = (day: string, field: string, value: any) => {
+    setWorkingHours(prev => ({
+      ...prev,
+      [day]: {
+        ...prev[day as keyof typeof prev],
+        [field]: value
+      }
+    }));
+  };
+
+  const handleComplete = async () => {
+    setIsSubmitting(true);
+    setError("");
+
+    const result = await completeOnboarding({
+      businessName,
+      category,
+      country,
+      workingHours,
+    });
+
+    if (result?.error) {
+      setError(result.error);
+      setIsSubmitting(false);
+    } else {
+      router.push("/dashboard");
+    }
   };
 
   return (
@@ -38,48 +82,59 @@ export default function OnboardingPage() {
         </div>
 
         <div className="bg-white rounded-xl shadow-lg border p-8">
+          {error && (
+            <div className="mb-6 p-3 text-sm font-medium text-red-600 bg-red-50 rounded-lg">
+              {error}
+            </div>
+          )}
+
           {currentStep === 0 && (
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-1.5">Business Name</label>
-                <input type="text" className="w-full rounded-lg border px-3 py-2 text-sm" placeholder="e.g., Elite Hair Studio" />
+                <input 
+                  type="text" 
+                  value={businessName}
+                  onChange={(e) => setBusinessName(e.target.value)}
+                  className="w-full rounded-lg border px-3 py-2 text-sm" 
+                  placeholder="e.g., Elite Hair Studio" 
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1.5">Category</label>
-                <select className="w-full rounded-lg border px-3 py-2 text-sm">
+                <select 
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="w-full rounded-lg border px-3 py-2 text-sm"
+                >
                   <option value="">Select a category</option>
-                  <option>Hair Salon</option>
-                  <option>Barber Shop</option>
-                  <option>Spa & Wellness</option>
-                  <option>Fitness & Training</option>
-                  <option>Medical & Dental</option>
-                  <option>Beauty & Aesthetics</option>
-                  <option>Other</option>
+                  <option value="Hair Salon">Hair Salon</option>
+                  <option value="Barber Shop">Barber Shop</option>
+                  <option value="Spa & Wellness">Spa & Wellness</option>
+                  <option value="Fitness & Training">Fitness & Training</option>
+                  <option value="Medical & Dental">Medical & Dental</option>
+                  <option value="Beauty & Aesthetics">Beauty & Aesthetics</option>
+                  <option value="Other">Other</option>
                 </select>
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1.5">Country</label>
-                <input type="text" className="w-full rounded-lg border px-3 py-2 text-sm" placeholder="United States" />
+                <input 
+                  type="text" 
+                  value={country}
+                  onChange={(e) => setCountry(e.target.value)}
+                  className="w-full rounded-lg border px-3 py-2 text-sm" 
+                  placeholder="United States" 
+                />
               </div>
             </div>
           )}
 
           {currentStep === 1 && (
             <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">Add your first service. You can add more later.</p>
-              <div>
-                <label className="block text-sm font-medium mb-1.5">Service Name</label>
-                <input type="text" className="w-full rounded-lg border px-3 py-2 text-sm" placeholder="e.g., Haircut" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1.5">Duration (minutes)</label>
-                  <input type="number" className="w-full rounded-lg border px-3 py-2 text-sm" placeholder="30" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1.5">Price ($)</label>
-                  <input type="number" className="w-full rounded-lg border px-3 py-2 text-sm" placeholder="50" />
-                </div>
+              <p className="text-sm text-muted-foreground">You can add services later from the dashboard.</p>
+              <div className="p-4 border rounded-lg bg-gray-50 flex items-center justify-center text-sm text-muted-foreground">
+                Services will be configured in Step 4 of the roadmap.
               </div>
             </div>
           )}
@@ -87,14 +142,36 @@ export default function OnboardingPage() {
           {currentStep === 2 && (
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">Set your regular working hours.</p>
-              {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day) => (
-                <div key={day} className="flex items-center gap-4">
-                  <label className="w-24 text-sm font-medium">{day}</label>
-                  <input type="time" defaultValue="09:00" className="rounded-lg border px-3 py-1.5 text-sm" />
-                  <span className="text-muted-foreground">to</span>
-                  <input type="time" defaultValue="17:00" className="rounded-lg border px-3 py-1.5 text-sm" />
-                </div>
-              ))}
+              {Object.keys(workingHours).map((day) => {
+                const hours = workingHours[day as keyof typeof workingHours];
+                return (
+                  <div key={day} className="flex items-center gap-4">
+                    <label className="w-24 text-sm font-medium flex items-center gap-2">
+                      <input 
+                        type="checkbox" 
+                        checked={hours.active} 
+                        onChange={(e) => handleWorkingHoursChange(day, "active", e.target.checked)}
+                      />
+                      {day}
+                    </label>
+                    <input 
+                      type="time" 
+                      value={hours.start}
+                      onChange={(e) => handleWorkingHoursChange(day, "start", e.target.value)}
+                      disabled={!hours.active}
+                      className="rounded-lg border px-3 py-1.5 text-sm disabled:opacity-50" 
+                    />
+                    <span className="text-muted-foreground">to</span>
+                    <input 
+                      type="time" 
+                      value={hours.end}
+                      onChange={(e) => handleWorkingHoursChange(day, "end", e.target.value)}
+                      disabled={!hours.active}
+                      className="rounded-lg border px-3 py-1.5 text-sm disabled:opacity-50" 
+                    />
+                  </div>
+                );
+              })}
             </div>
           )}
 
@@ -105,27 +182,45 @@ export default function OnboardingPage() {
               </div>
               <h3 className="text-lg font-semibold">You&apos;re all set!</h3>
               <p className="text-muted-foreground">
-                Your booking page is ready. Share it with your clients to start accepting appointments.
+                Your business profile is ready to be created. Click complete to go to your dashboard.
               </p>
+              
+              <div className="text-left mt-6 bg-slate-50 p-4 rounded-lg border text-sm space-y-2">
+                <p><strong>Business:</strong> {businessName || "Not set"}</p>
+                <p><strong>Category:</strong> {category || "Not set"}</p>
+                <p><strong>Country:</strong> {country || "Not set"}</p>
+              </div>
             </div>
           )}
 
           <div className="flex justify-between mt-8">
             <button
               onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
+              disabled={isSubmitting}
               className={`text-sm font-medium ${currentStep === 0 ? "invisible" : ""}`}
             >
               Back
             </button>
             <button
-              onClick={() =>
-                currentStep < steps.length - 1
-                  ? setCurrentStep(currentStep + 1)
-                  : handleComplete()
-              }
-              className="rounded-lg bg-brand-600 px-6 py-2 text-sm font-medium text-white hover:bg-brand-700 transition-colors"
+              onClick={() => {
+                if (currentStep < steps.length - 1) {
+                  // Basic validation for step 0
+                  if (currentStep === 0 && (!businessName || !category || !country)) {
+                    setError("Please fill out all fields");
+                    return;
+                  }
+                  setError("");
+                  setCurrentStep(currentStep + 1);
+                } else {
+                  handleComplete();
+                }
+              }}
+              disabled={isSubmitting}
+              className="rounded-lg bg-brand-600 px-6 py-2 text-sm font-medium text-white hover:bg-brand-700 transition-colors disabled:opacity-50"
             >
-              {currentStep === steps.length - 1 ? "Go to Dashboard" : "Continue"}
+              {currentStep === steps.length - 1 
+                ? (isSubmitting ? "Saving..." : "Complete Setup") 
+                : "Continue"}
             </button>
           </div>
         </div>

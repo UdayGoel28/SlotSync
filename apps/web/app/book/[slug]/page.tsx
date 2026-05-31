@@ -1,3 +1,5 @@
+import { notFound } from "next/navigation";
+import { prisma } from "@slotsync/database";
 import { ServiceSelector } from "@/components/booking/ServiceSelector";
 import { StaffSelector } from "@/components/booking/StaffSelector";
 import { DatePicker } from "@/components/booking/DatePicker";
@@ -11,8 +13,17 @@ interface BookingPageProps {
 export default async function BookingPage({ params }: BookingPageProps) {
   const { slug } = await params;
 
-  // In production, fetch business data by slug from the API
-  // const business = await fetch(`${process.env.API_URL}/api/businesses/slug/${slug}`);
+  const business = await prisma.business.findUnique({
+    where: { slug },
+    include: {
+      services: true,
+      staff: true,
+    }
+  });
+
+  if (!business) {
+    notFound();
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-brand-50 via-white to-brand-100">
@@ -20,12 +31,14 @@ export default async function BookingPage({ params }: BookingPageProps) {
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold">Book an Appointment</h1>
           <p className="text-muted-foreground mt-1">
-            at <span className="font-medium text-foreground">{slug}</span>
+            at <span className="font-medium text-foreground">{business.name}</span>
           </p>
         </div>
 
         <div className="bg-white rounded-xl shadow-lg border p-6 space-y-6">
-          <ServiceSelector />
+          <ServiceSelector services={business.services} />
+          
+          {/* We will wire these up in the next phase! */}
           <StaffSelector />
           <DatePicker />
           <TimePicker />

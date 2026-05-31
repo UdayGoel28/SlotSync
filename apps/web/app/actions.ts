@@ -15,7 +15,7 @@ export async function joinWaitlist(formData: { email: string; businessType: stri
 
   try {
     const supabase = await createClient();
-    const { error } = await supabase.from("waitlist").insert({
+    const { error } = await supabase.from("Waitlist").insert({
       email: formData.email,
       business_type: formData.businessType,
       country: formData.country,

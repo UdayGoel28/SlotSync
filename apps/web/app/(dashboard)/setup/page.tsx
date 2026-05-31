@@ -1,8 +1,33 @@
-import { EmptyState } from "@/components/shared/EmptyState";
+import { createClient } from "@/lib/supabase/server";
+import { prisma } from "@slotsync/database";
+import { redirect } from "next/navigation";
+import { BookingLinkHeader } from "@/components/dashboard/setup/BookingLinkHeader";
+import { ServicesManager } from "@/components/dashboard/setup/ServicesManager";
+import { StaffManager } from "@/components/dashboard/setup/StaffManager";
+import { BusinessSettingsForm } from "@/components/dashboard/setup/BusinessSettingsForm";
 
-export default function SetupPage() {
+export default async function SetupPage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const business = await prisma.business.findUnique({
+    where: { userId: user.id },
+    include: {
+      services: true,
+      staff: true,
+    }
+  });
+
+  if (!business) {
+    redirect("/onboarding");
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 max-w-4xl pb-12">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Booking Page Setup</h1>
         <p className="text-muted-foreground">
@@ -10,27 +35,13 @@ export default function SetupPage() {
         </p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Booking Page Preview */}
-        <div className="rounded-xl border bg-white p-6 space-y-4">
-          <h2 className="font-semibold">Preview</h2>
-          <div className="aspect-[9/16] rounded-lg bg-gray-100 flex items-center justify-center">
-            <p className="text-sm text-muted-foreground">
-              Your booking page preview will appear here
-            </p>
-          </div>
-        </div>
+      <BookingLinkHeader slug={business.slug} />
 
-        {/* Settings */}
-        <div className="rounded-xl border bg-white p-6 space-y-6">
-          <h2 className="font-semibold">Settings</h2>
-          <EmptyState
-            title="Configure your booking page"
-            description="Add services and staff members to set up your booking page."
-            icon="settings"
-          />
-        </div>
-      </div>
+      <ServicesManager initialServices={business.services} />
+      
+      <StaffManager initialStaff={business.staff} />
+      
+      <BusinessSettingsForm business={business} />
     </div>
   );
 }
