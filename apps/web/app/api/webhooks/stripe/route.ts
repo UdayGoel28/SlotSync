@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { stripe } from "@/lib/stripe";
 import { prisma } from "@slotsync/database";
 import Stripe from "stripe";
+import { sendClientConfirmationEmail, sendBusinessNotificationEmail } from "@/lib/emails";
 
 export async function POST(req: NextRequest) {
   const body = await req.text();
@@ -32,6 +33,12 @@ export async function POST(req: NextRequest) {
         // Find the booking associated with this payment intent
         const booking = await prisma.booking.findFirst({
           where: { stripePaymentIntentId: paymentIntent.id },
+          include: {
+            service: true,
+            business: {
+              include: { user: true }
+            }
+          }
         });
 
         if (booking) {
@@ -40,6 +47,23 @@ export async function POST(req: NextRequest) {
             data: { status: "paid" },
           });
           console.log(`✅ Booking ${booking.id} marked as paid`);
+
+          // Send confirmation and notification emails
+          const emailData = {
+            clientName: booking.clientName,
+            clientEmail: booking.clientEmail,
+            clientPhone: booking.clientPhone,
+            serviceName: booking.service.name,
+            businessName: booking.business.name,
+            businessEmail: booking.business.user.email,
+            startTime: booking.startTime,
+            bookingId: booking.id,
+          };
+          
+          await Promise.all([
+            sendClientConfirmationEmail(emailData),
+            sendBusinessNotificationEmail(emailData)
+          ]);
         } else {
           console.log(`⚠️ Payment succeeded for intent ${paymentIntent.id} but no booking found.`);
         }

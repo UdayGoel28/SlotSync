@@ -2,6 +2,7 @@
 import { prisma } from "@slotsync/database";
 import { stripe } from "@/lib/stripe";
 import { addMinutes } from "date-fns";
+import { sendClientConfirmationEmail, sendBusinessNotificationEmail } from "@/lib/emails";
 
 export async function createBookingIntent(data: {
   businessId: string;
@@ -13,7 +14,7 @@ export async function createBookingIntent(data: {
 }) {
   const business = await prisma.business.findUnique({
     where: { id: data.businessId },
-    include: { services: true }
+    include: { services: true, user: true }
   });
   
   if (!business) throw new Error("Business not found");
@@ -43,6 +44,23 @@ export async function createBookingIntent(data: {
       where: { id: booking.id },
       data: { status: "confirmed" }
     });
+
+    // Send emails since it's confirmed
+    const emailData = {
+      clientName: data.clientName,
+      clientEmail: data.clientEmail,
+      clientPhone: data.clientPhone,
+      serviceName: service.name,
+      businessName: business.name,
+      businessEmail: business.user.email,
+      startTime: data.startTime,
+      bookingId: booking.id,
+    };
+    await Promise.all([
+      sendClientConfirmationEmail(emailData),
+      sendBusinessNotificationEmail(emailData)
+    ]);
+
     return { success: true, bookingId: booking.id };
   }
 
@@ -75,6 +93,22 @@ export async function createBookingIntent(data: {
       where: { id: booking.id },
       data: { status: "confirmed" }
     });
+
+    const emailData = {
+      clientName: data.clientName,
+      clientEmail: data.clientEmail,
+      clientPhone: data.clientPhone,
+      serviceName: service.name,
+      businessName: business.name,
+      businessEmail: business.user.email,
+      startTime: data.startTime,
+      bookingId: booking.id,
+    };
+    await Promise.all([
+      sendClientConfirmationEmail(emailData),
+      sendBusinessNotificationEmail(emailData)
+    ]);
+
     return { success: true, bookingId: booking.id, skippedPayment: true };
   }
 }
