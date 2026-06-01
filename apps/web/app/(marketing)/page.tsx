@@ -165,21 +165,15 @@ export default function MarketingLandingPage() {
             </div>
           </FadeIn>
 
-          {/* Hero visual – soft sunrise/gradient illustration */}
+          {/* Hero visual – sunrise illustration */}
           <FadeIn delay={0.4} className="mt-16">
             <div className="relative max-w-3xl mx-auto">
-              <div className="relative w-full h-64 md:h-80 rounded-[2rem] bg-gradient-to-t from-[#faf9f7] via-rose-50 to-amber-50 overflow-hidden border border-slate-200/50 shadow-xl shadow-slate-200/30">
-                {/* Sun circle */}
-                <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-48 h-48 md:w-64 md:h-64 rounded-full bg-gradient-to-t from-rose-300/60 to-amber-200/40 blur-sm" />
-                <div className="absolute bottom-8 left-1/2 -translate-x-1/2 w-44 h-44 md:w-56 md:h-56 rounded-full bg-gradient-to-t from-rose-200/80 to-amber-100/60" />
-                {/* Clouds */}
-                <div className="absolute bottom-0 left-0 right-0 h-20">
-                  <div className="absolute bottom-0 left-[10%] w-32 h-16 bg-white rounded-full" />
-                  <div className="absolute bottom-0 left-[25%] w-48 h-20 bg-white rounded-full" />
-                  <div className="absolute bottom-0 left-[55%] w-40 h-16 bg-white rounded-full" />
-                  <div className="absolute bottom-0 left-[75%] w-36 h-14 bg-white rounded-full" />
-                  <div className="absolute bottom-0 left-[0%] w-full h-6 bg-white" />
-                </div>
+              <div className="relative w-full rounded-[2rem] overflow-hidden border border-slate-200/50 shadow-xl shadow-slate-200/30">
+                <img 
+                  src="/hero-sunrise.png" 
+                  alt="SlotSync — beautiful booking for service businesses" 
+                  className="w-full h-auto object-cover"
+                />
                 {/* Floating glass card */}
                 <div className="absolute top-6 right-6 md:top-10 md:right-10 bg-white/80 backdrop-blur-md rounded-2xl p-4 shadow-lg shadow-slate-200/40 border border-white/80 max-w-[180px]">
                   <div className="flex items-center gap-2 mb-2">
