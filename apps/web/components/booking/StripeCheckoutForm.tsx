@@ -5,7 +5,10 @@ import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-
 import { loadStripe } from "@stripe/stripe-js";
 
 // Initialize Stripe outside of component to avoid recreating the object on every render
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+// Only initialize if the key exists to prevent crashes in environments where it's missing
+const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY 
+  ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) 
+  : null;
 
 export function StripeCheckoutWrapper({ 
   clientSecret, 
@@ -14,6 +17,21 @@ export function StripeCheckoutWrapper({
   clientSecret: string;
   onSuccess: () => void;
 }) {
+  if (!stripePromise) {
+    return (
+      <div className="p-4 bg-yellow-50 text-yellow-800 rounded-lg border border-yellow-200">
+        <p className="font-medium">Payment system is currently unavailable.</p>
+        <p className="text-sm mt-1">Please contact the business directly to arrange payment.</p>
+        <button 
+          onClick={onSuccess}
+          className="mt-4 px-4 py-2 bg-yellow-100 hover:bg-yellow-200 text-yellow-900 rounded-lg text-sm font-medium transition-colors"
+        >
+          Complete Booking Without Payment
+        </button>
+      </div>
+    );
+  }
+
   return (
     <Elements stripe={stripePromise} options={{ clientSecret }}>
       <StripeCheckoutForm onSuccess={onSuccess} />
