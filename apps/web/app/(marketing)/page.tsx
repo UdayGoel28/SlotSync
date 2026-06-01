@@ -1,15 +1,74 @@
 "use client";
 
-import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useState, useRef } from "react";
+import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { joinWaitlist } from "@/app/actions";
 import Link from "next/link";
+import { 
+  CheckCircle2, 
+  Scissors, 
+  Dumbbell, 
+  Stethoscope,
+  Sparkles,
+  Zap,
+  CreditCard,
+  Smartphone
+} from "lucide-react";
+
+const SERVICES = [
+  {
+    id: "salon",
+    title: "Hair & Beauty Salons",
+    icon: <Scissors className="w-8 h-8 mb-4 text-primary" />,
+    description: "Manage multiple stylists, handle overlapping appointments, and automatically remind clients to reduce no-shows.",
+    color: "from-blue-500 to-purple-600"
+  },
+  {
+    id: "fitness",
+    title: "Fitness & Trainers",
+    icon: <Dumbbell className="w-8 h-8 mb-4 text-primary" />,
+    description: "Schedule 1-on-1 sessions or group classes. Seamlessly integrate class capacity and recurring billing.",
+    color: "from-emerald-400 to-cyan-500"
+  },
+  {
+    id: "medical",
+    title: "Clinics & Wellness",
+    icon: <Stethoscope className="w-8 h-8 mb-4 text-primary" />,
+    description: "Secure, private bookings with intake forms and flexible scheduling for multiple practitioners and rooms.",
+    color: "from-rose-400 to-orange-500"
+  }
+];
 
 export default function MarketingLandingPage() {
+  // Form State
   const [formData, setFormData] = useState({ email: "", businessType: "", country: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+
+  // Scroll animations for the 3D Service Section
+  const targetRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: targetRef,
+    offset: ["start start", "end end"]
+  });
+
+  // Transform scroll progress into 3D rotations and active indices
+  const rotateX = useTransform(scrollYProgress, [0, 0.5, 1], [10, 0, -10]);
+  const rotateY = useTransform(scrollYProgress, [0, 0.5, 1], [-20, 0, 20]);
+  const scale = useTransform(scrollYProgress, [0, 0.5, 1], [0.9, 1.05, 0.9]);
+  
+  // Calculate which service is active based on scroll (0 to 1 split into 3 chunks)
+  const activeServiceIndex = useTransform(scrollYProgress, (pos) => {
+    if (pos < 0.33) return 0;
+    if (pos < 0.66) return 1;
+    return 2;
+  });
+  
+  const [activeIndex, setActiveIndex] = useState(0);
+  
+  // Update state when scroll transforms change (for rendering React elements conditionally)
+  activeServiceIndex.on("change", (latest) => setActiveIndex(latest));
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -20,10 +79,8 @@ export default function MarketingLandingPage() {
     e.preventDefault();
     setIsSubmitting(true);
     setError(null);
-
     const res = await joinWaitlist(formData);
     setIsSubmitting(false);
-
     if (res.success) {
       setSuccess(true);
       setFormData({ email: "", businessType: "", country: "" });
@@ -34,27 +91,29 @@ export default function MarketingLandingPage() {
 
   const scrollToWaitlist = (e: React.MouseEvent<HTMLButtonElement | HTMLAnchorElement>) => {
     e.preventDefault();
-    const waitlistSection = document.getElementById("waitlist");
-    if (waitlistSection) {
-      waitlistSection.scrollIntoView({ behavior: "smooth" });
-    }
+    document.getElementById("waitlist")?.scrollIntoView({ behavior: "smooth" });
   };
 
   return (
-    <div className="bg-surface text-on-surface font-body-md selection:bg-primary selection:text-on-primary min-h-screen">
-      {/* Top Navigation */}
-      <header className="fixed top-0 left-0 w-full z-50 bg-surface-glass backdrop-blur-xl border-b border-glass-border shadow-sm">
-        <nav className="flex justify-between items-center px-gutter py-4 w-full max-w-container-max mx-auto">
-          <div className="font-headline-md text-headline-lg-mobile font-bold text-primary dark:text-primary">
-            SlotSync
+    <div className="bg-[#0b1326] text-[#dbe2fd] font-body-md selection:bg-primary selection:text-white min-h-screen overflow-x-hidden">
+      
+      {/* 1. Header (Clear Login / Sign Up) */}
+      <header className="fixed top-0 left-0 w-full z-50 bg-[#0b1326]/80 backdrop-blur-xl border-b border-white/5">
+        <nav className="flex justify-between items-center px-6 py-4 w-full max-w-7xl mx-auto">
+          <div className="flex items-center gap-2">
+            <Sparkles className="text-primary w-6 h-6" />
+            <span className="text-2xl font-bold tracking-tight text-white">SlotSync</span>
           </div>
-          <div className="flex items-center gap-sm">
-            <Link href="/login" className="text-on-surface hover:text-primary font-label-md uppercase tracking-wider transition-colors mr-4 hidden md:block">
-              Login
+          <div className="flex items-center gap-4">
+            <Link 
+              href="/login" 
+              className="text-gray-300 hover:text-white font-medium text-sm transition-colors px-4 py-2"
+            >
+              Log in
             </Link>
             <button 
               onClick={scrollToWaitlist}
-              className="bg-primary-container text-on-primary-container px-sm py-2 rounded-full font-label-md text-label-md uppercase tracking-wider shadow-[0_0_20px_rgba(99,91,255,0.3)] hover:shadow-[0_0_30px_rgba(99,91,255,0.5)] hover:scale-105 transition-all"
+              className="bg-primary hover:bg-primary/90 text-white px-6 py-2.5 rounded-full text-sm font-semibold shadow-[0_0_20px_rgba(99,91,255,0.3)] hover:shadow-[0_0_30px_rgba(99,91,255,0.5)] hover:scale-105 transition-all"
             >
               Sign up
             </button>
@@ -63,97 +122,236 @@ export default function MarketingLandingPage() {
       </header>
       
       <main>
-        {/* Hero Section */}
-        <section className="relative min-h-[90vh] flex flex-col justify-end pt-32 overflow-hidden">
-          {/* Background Image with Fade */}
-          <div className="absolute inset-0 z-0">
-            <img alt="Professional at work" className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDd--G7hm0afFY2n5UtVUZ3Fvd-gBkS2s8WgsTUqQzCC7hGmZZnlnLp3GSpcwokdk_XSmd1ehN2b6m68i3Tus4GuLbfZ-CjDhs-WhKCiYUUpEhtQcCMGFp53Os_cdSdRdo_X144bwtSy-XIVmKx1FPf_QknijUuD0pHnsAmlKrT6sca6GNmaf9cABwpDkLrHhl54sDbW101zrq65LJttpd2qGO7CnV-NNxnyXj43imGHjdvoGigULGmaZvFL2PaZlyoVOsNIpFZ20I"/>
-            <div className="absolute inset-0 bg-gradient-to-t from-surface via-surface/40 to-transparent"></div>
-            <div className="absolute inset-0 bg-gradient-to-r from-surface/80 via-transparent to-transparent"></div>
+        {/* 2. Hero Section (Clean, industry-agnostic, crisp) */}
+        <section className="relative pt-40 pb-20 px-6 overflow-hidden">
+          {/* Background Mesh Gradient */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] opacity-30 pointer-events-none">
+            <div className="absolute inset-0 bg-gradient-to-r from-primary to-purple-600 rounded-full blur-[100px] mix-blend-screen" />
           </div>
-          
-          {/* Hero Content */}
-          <div className="relative z-10 px-gutter pb-xl w-full max-w-container-max mx-auto">
-            <div className="flex flex-col lg:flex-row items-end gap-lg">
-              <div className="lg:w-1/2 space-y-sm">
-                <h1 className="font-display-xl text-[48px] md:text-[64px] leading-[1.1] tracking-[-0.04em] text-on-surface font-bold">
-                  Built for fast-moving service businesses.
-                </h1>
-                <p className="font-body-lg text-[18px] text-on-surface-variant max-w-[480px]">
-                  The all-in-one booking platform for modern salons and clinics. No app required.
-                </p>
-                <div className="pt-4">
-                  <button 
-                    onClick={scrollToWaitlist}
-                    className="bg-primary-container text-on-primary-container px-8 py-4 rounded-full font-label-md text-label-md uppercase tracking-wider shadow-[0_0_20px_rgba(99,91,255,0.3)] hover:shadow-[0_0_30px_rgba(99,91,255,0.5)] hover:scale-105 transition-all"
+
+          <div className="relative z-10 max-w-5xl mx-auto text-center">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-8"
+            >
+              <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+              <span className="text-sm font-medium text-gray-300">SlotSync V2 is launching soon</span>
+            </motion.div>
+
+            <motion.h1 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="text-5xl md:text-7xl font-bold tracking-tight text-white mb-6 leading-[1.1]"
+            >
+              The universal booking platform <br className="hidden md:block" />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-primary">for modern service businesses.</span>
+            </motion.h1>
+
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="text-lg md:text-xl text-gray-400 mb-10 max-w-2xl mx-auto"
+            >
+              Say goodbye to clunky software, mandatory client apps, and high fees. 
+              Manage your schedule, staff, and payments in one beautifully crisp dashboard.
+            </motion.p>
+
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              className="flex flex-col sm:flex-row items-center justify-center gap-4"
+            >
+              <button 
+                onClick={scrollToWaitlist}
+                className="w-full sm:w-auto bg-white text-black px-8 py-4 rounded-full text-base font-bold hover:scale-105 transition-transform"
+              >
+                Get Early Access
+              </button>
+              <Link 
+                href="/login"
+                className="w-full sm:w-auto px-8 py-4 rounded-full text-base font-bold bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors"
+              >
+                Sign in to Dashboard
+              </Link>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* 3. 3D Interactive Services Scroll Showcase */}
+        <section ref={targetRef} className="relative h-[300vh] bg-black">
+          <div className="sticky top-0 h-screen flex flex-col items-center justify-center overflow-hidden px-6">
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/10 via-black to-black" />
+            
+            <div className="relative z-10 text-center mb-12">
+              <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">One platform. <br/> Built for your industry.</h2>
+              <p className="text-gray-400">Keep scrolling to explore.</p>
+            </div>
+
+            {/* 3D Scene Container */}
+            <div className="relative w-full max-w-lg perspective-1000">
+              <motion.div 
+                style={{
+                  rotateX,
+                  rotateY,
+                  scale,
+                  transformStyle: "preserve-3d"
+                }}
+                className="relative w-full aspect-square md:aspect-video rounded-3xl border border-white/10 bg-black shadow-[0_0_50px_rgba(99,91,255,0.2)] flex items-center justify-center overflow-hidden"
+              >
+                {/* Background glow of active service */}
+                <div className={`absolute inset-0 opacity-20 bg-gradient-to-br ${SERVICES[activeIndex].color}`} />
+                
+                {/* Content */}
+                <AnimatePresence mode="wait">
+                  <motion.div 
+                    key={activeIndex}
+                    initial={{ opacity: 0, scale: 0.8, z: -100 }}
+                    animate={{ opacity: 1, scale: 1, z: 50 }}
+                    exit={{ opacity: 0, scale: 1.2, z: 100 }}
+                    transition={{ duration: 0.4 }}
+                    className="absolute inset-0 flex flex-col items-center justify-center text-center p-8 transform-style-3d"
+                    style={{ transform: "translateZ(50px)" }} // Pop out effect
                   >
-                    Get Early Access
-                  </button>
-                </div>
-              </div>
-              
-              {/* Floating Mockup Card */}
-              <div className="lg:w-1/2 w-full flex justify-center lg:justify-end">
-                <div className="relative group perspective-1000">
-                  <div className="absolute -inset-1 bg-gradient-to-r from-primary to-secondary rounded-[32px] blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
-                  <div className="relative bg-white rounded-[28px] p-2 shadow-2xl w-full max-w-[320px] shadow-[0_0_40px_-5px_rgba(99,91,255,0.15)] transform rotate-3 hover:rotate-0 transition-transform duration-500 hover:scale-105">
-                    <img alt="SlotSync App Mockup" className="rounded-[22px] w-full h-auto" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDsTW51BwZRwlb-IczUm1Mjue4jDeiLppynCPPJ0ZsZzYXlYQCiEJtOfdlzA8lhGcQPiNvZH4zr1Pe1sR81qXddiyYrYu0chhK-0ODxI77OjrNTWE1MZafa_i2mBAEM2qaSXVnOGgbcVRicUxszRAfohTqUGbfXp1G1qUxMtSHLz0X40hGk348n9DvHXJwaTegRu289G_EjNNsYO5XmqNqLpDFtBuGLVIwX4qGlMpmzQxbvcvCuzHAKNwrBpnwMtr9Voy6Yuk3ExYo"/>
-                  </div>
-                </div>
+                    {SERVICES[activeIndex].icon}
+                    <h3 className="text-3xl font-bold text-white mb-4">{SERVICES[activeIndex].title}</h3>
+                    <p className="text-gray-300 text-lg">{SERVICES[activeIndex].description}</p>
+                  </motion.div>
+                </AnimatePresence>
+              </motion.div>
+
+              {/* Indicator Dots */}
+              <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 flex gap-3">
+                {SERVICES.map((_, i) => (
+                  <div 
+                    key={i} 
+                    className={`h-2 rounded-full transition-all duration-300 ${i === activeIndex ? 'w-8 bg-primary' : 'w-2 bg-white/20'}`}
+                  />
+                ))}
               </div>
             </div>
           </div>
         </section>
 
-        {/* Features Section */}
-        <section className="py-xl px-gutter max-w-container-max mx-auto mt-12">
-          <div className="text-center mb-xl">
-            <span className="text-primary font-label-md text-[12px] font-semibold uppercase tracking-[0.2em] mb-xs block">Capabilities</span>
-            <h2 className="font-headline-lg text-[32px] font-semibold text-on-surface tracking-[-0.02em]">Streamline your workflow</h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-sm md:gap-lg">
-            {/* Feature 1 */}
-            <div className="bg-[rgba(255,255,255,0.03)] backdrop-blur-[20px] border border-glass-border p-lg rounded-[32px] group hover:bg-surface-container-high transition-colors duration-300">
-              <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center mb-sm text-primary group-hover:scale-110 transition-transform">
-                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
-              </div>
-              <h3 className="font-headline-md text-[24px] font-semibold text-on-surface mb-xs">Automated Reminders</h3>
-              <p className="font-body-md text-[16px] text-on-surface-variant">Reduce no-shows by 40% with smart SMS and email notifications that keep clients on track.</p>
+        {/* 4. USPs / Comparison Section */}
+        <section className="py-32 px-6 bg-[#0b1326] relative z-20">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-20">
+              <h2 className="text-4xl font-bold text-white mb-4">Why businesses switch to SlotSync</h2>
+              <p className="text-gray-400 max-w-2xl mx-auto">Traditional booking apps are clunky, require your clients to download an app, and hold onto your money. We do things differently.</p>
             </div>
-            {/* Feature 2 */}
-            <div className="bg-[rgba(255,255,255,0.03)] backdrop-blur-[20px] border border-glass-border p-lg rounded-[32px] group hover:bg-surface-container-high transition-colors duration-300">
-              <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center mb-sm text-primary group-hover:scale-110 transition-transform">
-                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="bg-white/5 border border-white/10 rounded-3xl p-8 hover:bg-white/10 transition-colors">
+                <div className="w-14 h-14 bg-primary/20 rounded-2xl flex items-center justify-center mb-6">
+                  <Smartphone className="w-7 h-7 text-primary" />
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-3">No Client App Required</h3>
+                <p className="text-gray-400">Clients book instantly through a beautiful web link. No passwords to remember, no mandatory app downloads. Frictionless conversion.</p>
               </div>
-              <h3 className="font-headline-md text-[24px] font-semibold text-on-surface mb-xs">Custom Booking Links</h3>
-              <p className="font-body-md text-[16px] text-on-surface-variant">Share your availability anywhere. Social media, your website, or direct message links for instant conversion.</p>
-            </div>
-            {/* Feature 3 */}
-            <div className="bg-[rgba(255,255,255,0.03)] backdrop-blur-[20px] border border-glass-border p-lg rounded-[32px] group hover:bg-surface-container-high transition-colors duration-300">
-              <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center mb-sm text-primary group-hover:scale-110 transition-transform">
-                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+
+              <div className="bg-white/5 border border-white/10 rounded-3xl p-8 hover:bg-white/10 transition-colors relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-8 opacity-5">
+                  <CreditCard className="w-48 h-48" />
+                </div>
+                <div className="w-14 h-14 bg-primary/20 rounded-2xl flex items-center justify-center mb-6 relative z-10">
+                  <Zap className="w-7 h-7 text-primary" />
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-3 relative z-10">Direct Stripe Payouts</h3>
+                <p className="text-gray-400 relative z-10">We don't hold your funds. With our Stripe Connect integration, money flows directly to your bank account instantly. Take deposits to eliminate no-shows.</p>
               </div>
-              <h3 className="font-headline-md text-[24px] font-semibold text-on-surface mb-xs">Team Management</h3>
-              <p className="font-body-md text-[16px] text-on-surface-variant">Sync multiple staff calendars, set individual permissions, and track performance across your entire clinic.</p>
+
+              <div className="bg-white/5 border border-white/10 rounded-3xl p-8 hover:bg-white/10 transition-colors">
+                <div className="w-14 h-14 bg-primary/20 rounded-2xl flex items-center justify-center mb-6">
+                  <CheckCircle2 className="w-7 h-7 text-primary" />
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-3">Multi-Staff Mastery</h3>
+                <p className="text-gray-400">Easily manage complex rosters. Staff get their own logins and schedules, while you get a bird's-eye view of your entire business operations.</p>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* Waitlist Section replacing Pricing */}
-        <section id="waitlist" className="py-xl px-gutter relative overflow-hidden mt-12">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[120px] pointer-events-none"></div>
-          
-          <div className="max-w-container-max mx-auto text-center mb-xl">
-            <span className="text-primary font-label-md text-[12px] font-semibold uppercase tracking-[0.2em] mb-xs block">Early Access</span>
-            <h2 className="font-headline-lg text-[32px] font-semibold text-on-surface mb-sm">Secure your spot on the waitlist</h2>
-            <p className="font-body-lg text-[18px] text-on-surface-variant max-w-md mx-auto">
-              We're rolling out SlotSync to a limited number of service businesses. Sign up now to lock in 3 months free when we launch in your area.
-            </p>
+        {/* 5. Pricing Section (3-Tier) */}
+        <section className="py-32 px-6 bg-black">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-20">
+              <h2 className="text-4xl font-bold text-white mb-4">Simple, transparent pricing</h2>
+              <p className="text-gray-400">Start for free. Upgrade when you need more power.</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+              {/* Starter */}
+              <div className="bg-white/5 border border-white/10 rounded-3xl p-8">
+                <h3 className="text-xl font-semibold text-gray-300 mb-2">Starter</h3>
+                <div className="flex items-baseline gap-1 mb-6">
+                  <span className="text-5xl font-bold text-white">$0</span>
+                  <span className="text-gray-400">/mo</span>
+                </div>
+                <p className="text-gray-400 text-sm mb-8 pb-8 border-b border-white/10">Perfect for solo professionals just getting started.</p>
+                <ul className="space-y-4 mb-8">
+                  <li className="flex items-center gap-3 text-gray-300"><CheckCircle2 className="w-5 h-5 text-gray-500" /> 1 Staff Member</li>
+                  <li className="flex items-center gap-3 text-gray-300"><CheckCircle2 className="w-5 h-5 text-gray-500" /> Up to 50 bookings/mo</li>
+                  <li className="flex items-center gap-3 text-gray-300"><CheckCircle2 className="w-5 h-5 text-gray-500" /> Basic booking link</li>
+                </ul>
+                <button onClick={scrollToWaitlist} className="w-full py-3 rounded-full border border-white/20 text-white hover:bg-white/5 transition-colors font-semibold">Start Free</button>
+              </div>
+
+              {/* Professional (Highlighted) */}
+              <div className="bg-gradient-to-b from-primary/20 to-black border border-primary rounded-3xl p-8 relative transform md:-translate-y-4 shadow-[0_0_30px_rgba(99,91,255,0.2)]">
+                <div className="absolute top-0 right-8 -translate-y-1/2 bg-primary text-white px-3 py-1 rounded-full text-xs font-bold tracking-wider uppercase">Most Popular</div>
+                <h3 className="text-xl font-semibold text-primary mb-2">Professional</h3>
+                <div className="flex items-baseline gap-1 mb-6">
+                  <span className="text-5xl font-bold text-white">$29</span>
+                  <span className="text-gray-400">/mo</span>
+                </div>
+                <p className="text-gray-400 text-sm mb-8 pb-8 border-b border-white/10">Everything you need to run a modern service business.</p>
+                <ul className="space-y-4 mb-8">
+                  <li className="flex items-center gap-3 text-white"><CheckCircle2 className="w-5 h-5 text-primary" /> Up to 5 Staff Members</li>
+                  <li className="flex items-center gap-3 text-white"><CheckCircle2 className="w-5 h-5 text-primary" /> Unlimited Bookings</li>
+                  <li className="flex items-center gap-3 text-white"><CheckCircle2 className="w-5 h-5 text-primary" /> Stripe Payment Processing</li>
+                  <li className="flex items-center gap-3 text-white"><CheckCircle2 className="w-5 h-5 text-primary" /> Automated SMS Reminders</li>
+                </ul>
+                <button onClick={scrollToWaitlist} className="w-full py-3 rounded-full bg-primary text-white hover:bg-primary/90 transition-colors font-bold shadow-[0_0_15px_rgba(99,91,255,0.4)]">Get Early Access</button>
+              </div>
+
+              {/* Business */}
+              <div className="bg-white/5 border border-white/10 rounded-3xl p-8">
+                <h3 className="text-xl font-semibold text-gray-300 mb-2">Business</h3>
+                <div className="flex items-baseline gap-1 mb-6">
+                  <span className="text-5xl font-bold text-white">$79</span>
+                  <span className="text-gray-400">/mo</span>
+                </div>
+                <p className="text-gray-400 text-sm mb-8 pb-8 border-b border-white/10">For large clinics, franchises, and high-volume salons.</p>
+                <ul className="space-y-4 mb-8">
+                  <li className="flex items-center gap-3 text-gray-300"><CheckCircle2 className="w-5 h-5 text-gray-500" /> Unlimited Staff</li>
+                  <li className="flex items-center gap-3 text-gray-300"><CheckCircle2 className="w-5 h-5 text-gray-500" /> Advanced Analytics</li>
+                  <li className="flex items-center gap-3 text-gray-300"><CheckCircle2 className="w-5 h-5 text-gray-500" /> Multi-location support</li>
+                  <li className="flex items-center gap-3 text-gray-300"><CheckCircle2 className="w-5 h-5 text-gray-500" /> Priority Support</li>
+                </ul>
+                <button onClick={scrollToWaitlist} className="w-full py-3 rounded-full border border-white/20 text-white hover:bg-white/5 transition-colors font-semibold">Join Waitlist</button>
+              </div>
+            </div>
           </div>
+        </section>
+
+        {/* 6. Waitlist Form Section */}
+        <section id="waitlist" className="py-32 px-6 bg-[#0b1326] relative overflow-hidden">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
           
           <div className="max-w-xl mx-auto relative z-10">
-            <div className="bg-surface-container-highest rounded-[32px] p-lg border border-primary/30 shadow-[0_0_40px_-5px_rgba(99,91,255,0.15)] relative overflow-hidden">
-              
+            <div className="text-center mb-12">
+              <h2 className="text-4xl font-bold text-white mb-4">Secure your spot</h2>
+              <p className="text-gray-400">
+                We're rolling out SlotSync to a limited number of businesses. Sign up now to lock in your pricing.
+              </p>
+            </div>
+            
+            <div className="bg-white/5 backdrop-blur-xl rounded-[32px] p-8 border border-white/10 shadow-2xl">
               <AnimatePresence mode="wait">
                 {success ? (
                   <motion.div
@@ -163,12 +361,12 @@ export default function MarketingLandingPage() {
                     exit={{ opacity: 0, scale: 0.95 }}
                     className="space-y-4 text-center py-8"
                   >
-                    <div className="w-16 h-16 bg-success-vibrant/20 text-success-vibrant rounded-full flex items-center justify-center mx-auto text-3xl font-bold border border-success-vibrant/30">
-                      <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/></svg>
+                    <div className="w-16 h-16 bg-green-500/20 text-green-400 rounded-full flex items-center justify-center mx-auto text-3xl font-bold border border-green-500/30 mb-6">
+                      <CheckCircle2 className="w-8 h-8" />
                     </div>
-                    <h3 className="text-[24px] font-semibold font-headline-md text-on-surface">You're on the list!</h3>
-                    <p className="text-on-surface-variant text-[16px]">
-                      Thank you for joining. We will email you with your early access invite as soon as we open in your city.
+                    <h3 className="text-2xl font-bold text-white">You're on the list!</h3>
+                    <p className="text-gray-400">
+                      Thank you for joining. We will email you with your early access invite as soon as your spot opens.
                     </p>
                   </motion.div>
                 ) : (
@@ -181,14 +379,13 @@ export default function MarketingLandingPage() {
                     className="space-y-6 text-left"
                   >
                     {error && (
-                      <div className="bg-error/10 border border-error/20 rounded-xl p-3 text-error text-[14px] font-semibold">
+                      <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 text-red-400 text-sm font-medium">
                         {error}
                       </div>
                     )}
 
-                    {/* Email Field */}
                     <div className="space-y-2">
-                      <label htmlFor="email" className="text-[12px] font-semibold text-on-surface-variant uppercase tracking-wider">
+                      <label htmlFor="email" className="text-xs font-bold text-gray-400 uppercase tracking-wider">
                         Email Address
                       </label>
                       <input
@@ -199,14 +396,13 @@ export default function MarketingLandingPage() {
                         onChange={handleInputChange}
                         placeholder="name@business.com"
                         required
-                        className="w-full h-12 bg-surface border border-outline-variant rounded-xl px-4 text-[16px] text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/40 transition-all placeholder:text-text-muted"
+                        className="w-full h-12 bg-black/50 border border-white/10 rounded-xl px-4 text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/40 transition-all placeholder:text-gray-600"
                       />
                     </div>
 
-                    {/* Business Type & Country */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <label htmlFor="businessType" className="text-[12px] font-semibold text-on-surface-variant uppercase tracking-wider">
+                        <label htmlFor="businessType" className="text-xs font-bold text-gray-400 uppercase tracking-wider">
                           Business Type
                         </label>
                         <select
@@ -215,20 +411,21 @@ export default function MarketingLandingPage() {
                           value={formData.businessType}
                           onChange={handleInputChange}
                           required
-                          className="w-full h-12 bg-surface border border-outline-variant rounded-xl px-4 text-[16px] text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/40 transition-all appearance-none"
+                          className="w-full h-12 bg-black/50 border border-white/10 rounded-xl px-4 text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/40 transition-all appearance-none"
                         >
-                          <option value="" disabled>Select business type</option>
+                          <option value="" disabled>Select type</option>
                           <option value="Hair Salon">Hair Salon</option>
                           <option value="Barber Shop">Barber Shop</option>
                           <option value="Nail Salon">Nail Salon</option>
                           <option value="Beauty / Spa">Beauty &amp; Spa</option>
                           <option value="Fitness / Personal Trainer">Fitness &amp; Trainer</option>
+                          <option value="Medical / Clinic">Medical / Clinic</option>
                           <option value="Other">Other Service</option>
                         </select>
                       </div>
 
                       <div className="space-y-2">
-                        <label htmlFor="country" className="text-[12px] font-semibold text-on-surface-variant uppercase tracking-wider">
+                        <label htmlFor="country" className="text-xs font-bold text-gray-400 uppercase tracking-wider">
                           Country
                         </label>
                         <select
@@ -237,7 +434,7 @@ export default function MarketingLandingPage() {
                           value={formData.country}
                           onChange={handleInputChange}
                           required
-                          className="w-full h-12 bg-surface border border-outline-variant rounded-xl px-4 text-[16px] text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/40 transition-all appearance-none"
+                          className="w-full h-12 bg-black/50 border border-white/10 rounded-xl px-4 text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/40 transition-all appearance-none"
                         >
                           <option value="" disabled>Select country</option>
                           <option value="United States">United States</option>
@@ -251,7 +448,7 @@ export default function MarketingLandingPage() {
                     <button
                       type="submit"
                       disabled={isSubmitting}
-                      className="w-full bg-primary-container text-on-primary-container py-4 rounded-full font-label-md text-[14px] font-semibold uppercase tracking-widest shadow-[0_0_20px_rgba(99,91,255,0.3)] hover:shadow-[0_0_30px_rgba(99,91,255,0.5)] active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed mt-4"
+                      className="w-full bg-white text-black py-4 rounded-xl font-bold hover:scale-[1.02] active:scale-[0.98] transition-transform disabled:opacity-50 disabled:cursor-not-allowed mt-4"
                     >
                       {isSubmitting ? "Joining..." : "Join Free Waitlist"}
                     </button>
@@ -265,16 +462,18 @@ export default function MarketingLandingPage() {
       </main>
       
       {/* Footer */}
-      <footer className="bg-surface-container-lowest border-t border-glass-border py-xl mt-24">
-        <div className="flex flex-col md:flex-row justify-between items-center px-gutter gap-sm w-full max-w-container-max mx-auto">
-          <div className="mb-sm md:mb-0 text-center md:text-left">
-            <div className="font-headline-md text-[24px] font-semibold text-primary mb-2">SlotSync</div>
-            <div className="font-label-md text-[14px] text-surface-tint">© 2026 SlotSync. Precision in every slot.</div>
+      <footer className="border-t border-white/10 py-12 bg-black">
+        <div className="flex flex-col md:flex-row justify-between items-center px-6 gap-6 w-full max-w-7xl mx-auto">
+          <div className="text-center md:text-left">
+            <div className="font-bold text-2xl text-white mb-2 flex items-center gap-2 justify-center md:justify-start">
+              <Sparkles className="text-primary w-5 h-5" /> SlotSync
+            </div>
+            <div className="text-sm text-gray-500">© 2026 SlotSync. The universal booking platform.</div>
           </div>
-          <div className="flex gap-lg">
-            <a className="font-label-md text-[14px] text-text-muted hover:text-primary transition-colors cursor-pointer" href="#">Privacy Policy</a>
-            <a className="font-label-md text-[14px] text-text-muted hover:text-primary transition-colors cursor-pointer" href="#">Terms of Service</a>
-            <a className="font-label-md text-[14px] text-text-muted hover:text-primary transition-colors cursor-pointer" href="#">Contact</a>
+          <div className="flex gap-8">
+            <a className="text-sm text-gray-500 hover:text-white transition-colors" href="#">Privacy</a>
+            <a className="text-sm text-gray-500 hover:text-white transition-colors" href="#">Terms</a>
+            <a className="text-sm text-gray-500 hover:text-white transition-colors" href="#">Contact</a>
           </div>
         </div>
       </footer>
