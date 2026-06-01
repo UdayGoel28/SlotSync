@@ -50,3 +50,22 @@ export async function createStripeConnectAccount() {
 
   redirect(accountLink.url);
 }
+
+export async function disconnectStripeAccount() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("Unauthorized");
+  }
+
+  // We simply nullify the stripeAccountId in our database.
+  // Note: For a full disconnect, you'd also want to call stripe.oauth.deauthorize 
+  // or delete the express account if you no longer need it, but nullifying is safe.
+  await prisma.business.update({
+    where: { userId: user.id },
+    data: { stripeAccountId: null },
+  });
+
+  redirect("/payments");
+}

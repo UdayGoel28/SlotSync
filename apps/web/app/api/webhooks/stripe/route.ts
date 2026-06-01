@@ -1,48 +1,58 @@
 import { NextRequest, NextResponse } from "next/server";
+import { headers } from "next/headers";
 import { stripe } from "@/lib/stripe";
+import { prisma } from "@slotsync/database";
 import Stripe from "stripe";
 
 export async function POST(req: NextRequest) {
   const body = await req.text();
-  const signature = req.headers.get("stripe-signature");
+  const headersList = await headers();
+  const signature = headersList.get("stripe-signature") as string;
 
-  if (!signature) {
-    return NextResponse.json({ error: "Missing signature" }, { status: 400 });
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+  if (!webhookSecret) {
+    return NextResponse.json({ error: "Stripe webhook secret not set" }, { status: 400 });
   }
 
   let event: Stripe.Event;
 
   try {
-    event = stripe.webhooks.constructEvent(
-      body,
-      signature,
-      process.env.STRIPE_WEBHOOK_SECRET!
-    );
-  } catch (err) {
-    console.error("Webhook signature verification failed:", err);
-    return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
+    event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+  } catch (err: any) {
+    console.error(`Webhook signature verification failed: ${err.message}`);
+    return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 });
   }
 
-  switch (event.type) {
-    case "payment_intent.succeeded": {
-      const paymentIntent = event.data.object as Stripe.PaymentIntent;
-      console.log("Payment succeeded:", paymentIntent.id);
-      // Update booking status in database
-      break;
-    }
-    case "payment_intent.payment_failed": {
-      const paymentIntent = event.data.object as Stripe.PaymentIntent;
-      console.log("Payment failed:", paymentIntent.id);
-      break;
-    }
-    case "account.updated": {
-      const account = event.data.object as Stripe.Account;
-      console.log("Connect account updated:", account.id);
-      break;
-    }
-    default:
-      console.log(`Unhandled event type: ${event.type}`);
-  }
+  try {
+    switch (event.type) {
+      case "payment_intent.succeeded": {
+        const paymentIntent = event.data.object as Stripe.PaymentIntent;
+        
+        // Find the booking associated with this payment intent
+        const booking = await prisma.booking.findFirst({
+          where: { stripePaymentIntentId: paymentIntent.id },
+        });
 
-  return NextResponse.json({ received: true });
+        if (booking) {
+          await prisma.booking.update({
+            where: { id: booking.id },
+            data: { status: "paid" },
+          });
+          console.log(`✅ Booking ${booking.id} marked as paid`);
+        } else {
+          console.log(`⚠️ Payment succeeded for intent ${paymentIntent.id} but no booking found.`);
+        }
+        break;
+      }
+      // You can handle other events like 'account.updated' here if needed.
+      default:
+        console.log(`Unhandled event type: ${event.type}`);
+    }
+
+    return NextResponse.json({ received: true });
+  } catch (error) {
+    console.error("Webhook processing failed:", error);
+    return NextResponse.json({ error: "Webhook processing failed" }, { status: 500 });
+  }
 }

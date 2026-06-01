@@ -1,10 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@slotsync/database";
-import { ServiceSelector } from "@/components/booking/ServiceSelector";
-import { StaffSelector } from "@/components/booking/StaffSelector";
-import { DatePicker } from "@/components/booking/DatePicker";
-import { TimePicker } from "@/components/booking/TimePicker";
-import { ClientForm } from "@/components/booking/ClientForm";
+import { BookingFlow } from "./BookingFlow";
 
 interface BookingPageProps {
   params: Promise<{ slug: string }>;
@@ -35,19 +31,7 @@ export default async function BookingPage({ params }: BookingPageProps) {
           </p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-lg border p-6 space-y-6">
-          <ServiceSelector services={business.services} />
-          
-          {/* We will wire these up in the next phase! */}
-          <StaffSelector />
-          <DatePicker />
-          <TimePicker />
-          <ClientForm />
-
-          <button className="w-full rounded-lg bg-brand-600 py-3 text-sm font-medium text-white hover:bg-brand-700 transition-colors">
-            Confirm Booking
-          </button>
-        </div>
+        <BookingFlow business={business} />
       </div>
     </div>
   );
