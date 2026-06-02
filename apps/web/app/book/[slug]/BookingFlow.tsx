@@ -13,6 +13,7 @@ type BusinessData = {
   id: string;
   name: string;
   stripeAccountId: string | null;
+  workingHours: any;
   services: any[];
   staff: any[];
 };
@@ -20,8 +21,8 @@ type BusinessData = {
 export function BookingFlow({ business }: { business: BusinessData }) {
   const [step, setStep] = useState(1);
   const [serviceId, setServiceId] = useState<string>("");
-  const [date, setDate] = useState<Date | null>(new Date()); // Mocked default
-  const [time, setTime] = useState<string>("09:00"); // Mocked default
+  const [date, setDate] = useState<Date | null>(new Date());
+  const [time, setTime] = useState<string>("");
   const [clientName, setClientName] = useState("");
   const [clientEmail, setClientEmail] = useState("");
   const [clientPhone, setClientPhone] = useState("");
@@ -32,8 +33,8 @@ export function BookingFlow({ business }: { business: BusinessData }) {
   const [error, setError] = useState<string | null>(null);
 
   const handleContinue = async () => {
-    if (!serviceId || !clientName || !clientEmail) {
-      setError("Please fill in all details and select a service.");
+    if (!serviceId || !clientName || !clientEmail || !date || !time) {
+      setError("Please fill in all details, select a service, date, and time.");
       return;
     }
     
@@ -108,6 +109,32 @@ export function BookingFlow({ business }: { business: BusinessData }) {
                 </option>
               ))}
             </select>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <DatePicker date={date} setDate={setDate} />
+            <TimePicker 
+              time={time} 
+              setTime={setTime} 
+              availableSlots={(() => {
+                if (!date) return [];
+                const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+                const dayName = days[date.getDay()];
+                const dayConfig = business.workingHours?.[dayName];
+                
+                if (!dayConfig || !dayConfig.active) return [];
+                
+                const startHour = parseInt(dayConfig.start.split(":")[0]);
+                const endHour = parseInt(dayConfig.end.split(":")[0]);
+                
+                const slots = [];
+                for (let i = startHour; i < endHour; i++) {
+                  slots.push(`${i.toString().padStart(2, "0")}:00`);
+                  slots.push(`${i.toString().padStart(2, "0")}:30`);
+                }
+                return slots;
+              })()} 
+            />
           </div>
           
           <div className="space-y-3">

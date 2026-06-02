@@ -5,6 +5,7 @@ import { BookingLinkHeader } from "@/components/dashboard/setup/BookingLinkHeade
 import { ServicesManager } from "@/components/dashboard/setup/ServicesManager";
 import { StaffManager } from "@/components/dashboard/setup/StaffManager";
 import { BusinessSettingsForm } from "@/components/dashboard/setup/BusinessSettingsForm";
+import { ProfileSettingsForm } from "@/components/dashboard/setup/ProfileSettingsForm";
 
 export default async function SetupPage() {
   const supabase = await createClient();
@@ -41,6 +42,8 @@ export default async function SetupPage() {
       
       <StaffManager initialStaff={business.staff} />
       
+      <ProfileSettingsForm business={business} />
+
       <BusinessSettingsForm business={business} />
     </div>
   );

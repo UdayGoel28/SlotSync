@@ -135,6 +135,28 @@ export async function updateBusinessSettings(data: { bufferMinutes: number; book
   }
 }
 
+export async function updateBusinessProfile(data: { name: string; description?: string; logoUrl?: string; coverUrl?: string }) {
+  const business = await getBusinessForUser();
+  if (!business) return { error: "Business not found" };
+
+  try {
+    await prisma.business.update({
+      where: { id: business.id },
+      data: {
+        name: data.name,
+        description: data.description,
+        logoUrl: data.logoUrl,
+        coverUrl: data.coverUrl,
+      }
+    });
+    revalidatePath("/setup");
+    revalidatePath(`/book/${business.slug}`);
+    return { success: true };
+  } catch (error) {
+    return { error: "Failed to update business profile" };
+  }
+}
+
 // --- REVIEW SETTINGS ---
 
 export async function updateReviewSettings(data: {
