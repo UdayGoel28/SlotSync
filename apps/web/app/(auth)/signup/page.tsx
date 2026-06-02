@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { track } from "@/lib/posthog";
 
 export default function SignupPage() {
   const [name, setName] = useState("");
@@ -33,6 +34,7 @@ export default function SignupPage() {
       return;
     }
 
+    track({ event: "user_signed_up", properties: { email, name } });
     router.push("/onboarding");
   };
 

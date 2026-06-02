@@ -6,6 +6,7 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { createStripeConnectAccount, disconnectStripeAccount } from "@/app/actions/stripe";
 import { startOfMonth, endOfMonth, format } from "date-fns";
 import Stripe from "stripe";
+import { StripeConnectTracker } from "@/components/dashboard/payments/StripeConnectTracker";
 
 export default async function PaymentsPage({
   searchParams,
@@ -140,6 +141,9 @@ export default async function PaymentsPage({
         </div>
       ) : (
         <div className="space-y-6 mt-8">
+          {searchParams.connected === "true" && business.stripeAccountId && (
+            <StripeConnectTracker accountId={business.stripeAccountId} />
+          )}
           <div className="rounded-xl border border-green-200 bg-green-50 p-4 flex items-center gap-3">
             <div className="w-8 h-8 bg-green-100 text-green-600 rounded-full flex items-center justify-center shrink-0">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>

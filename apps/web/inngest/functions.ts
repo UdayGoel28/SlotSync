@@ -3,6 +3,7 @@ import { prisma } from "@slotsync/database";
 import { sendBookingReminderEmail, sendReviewRequestEmail, sendDailySummaryEmail } from "@/lib/emails";
 import { sendTwoHourReminderSms, sendReviewRequestSms } from "@/lib/sms";
 import { startOfDay, endOfDay, addDays } from "date-fns";
+import { posthogServer } from "@/lib/posthog-server";
 
 /* ═══════════════════════════════════════════════════════
    1. 24-HOUR EMAIL REMINDER
@@ -188,6 +189,18 @@ export const reviewRequest = inngest.createFunction(
         where: { id: data.bookingId },
         data: { reviewRequestSent: true },
       });
+    });
+
+    await step.run("track-analytics", async () => {
+      posthogServer.capture({
+        distinctId: data.clientEmail,
+        event: "review_request_sent",
+        properties: {
+          businessId: booking.businessId,
+          googlePlaceId: data.googlePlaceId,
+        },
+      });
+      await posthogServer.flush();
     });
 
     return { success: true, sentAt: new Date().toISOString() };

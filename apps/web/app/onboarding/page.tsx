@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Logo } from "@/components/shared/Logo";
 import { completeOnboarding } from "@/app/actions/onboarding";
+import { track } from "@/lib/posthog";
 
 const steps = ["Business Info", "Services", "Working Hours", "Review"];
 
@@ -54,6 +55,7 @@ export default function OnboardingPage() {
       setError(result.error);
       setIsSubmitting(false);
     } else {
+      track({ event: "onboarding_completed", properties: { businessName, category } });
       router.push("/dashboard");
     }
   };

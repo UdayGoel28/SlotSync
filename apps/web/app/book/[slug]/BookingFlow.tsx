@@ -7,6 +7,7 @@ import { DatePicker } from "@/components/booking/DatePicker";
 import { TimePicker } from "@/components/booking/TimePicker";
 import { StripeCheckoutWrapper } from "@/components/booking/StripeCheckoutForm";
 import { createBookingIntent } from "@/app/actions/booking";
+import { track } from "@/lib/posthog";
 
 type BusinessData = {
   id: string;
@@ -57,6 +58,15 @@ export function BookingFlow({ business }: { business: BusinessData }) {
         setClientSecret(res.clientSecret);
         setStep(2);
       } else if (res.success) {
+        const selectedService = business.services.find(s => s.id === serviceId);
+        track({ 
+          event: "booking_created", 
+          properties: { 
+            serviceName: selectedService?.name, 
+            servicePrice: selectedService?.price, 
+            businessSlug: business.id 
+          } 
+        });
         setSuccess(true);
       }
     } catch (err: any) {
@@ -141,7 +151,18 @@ export function BookingFlow({ business }: { business: BusinessData }) {
           {clientSecret && (
             <StripeCheckoutWrapper 
               clientSecret={clientSecret} 
-              onSuccess={() => setSuccess(true)} 
+              onSuccess={() => {
+                const selectedService = business.services.find(s => s.id === serviceId);
+                track({ 
+                  event: "booking_created", 
+                  properties: { 
+                    serviceName: selectedService?.name, 
+                    servicePrice: selectedService?.price, 
+                    businessSlug: business.id 
+                  } 
+                });
+                setSuccess(true);
+              }} 
             />
           )}
         </>
