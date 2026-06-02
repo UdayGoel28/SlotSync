@@ -4,6 +4,30 @@ import { stripe } from "@/lib/stripe";
 import { addMinutes } from "date-fns";
 import { sendClientConfirmationEmail, sendBusinessNotificationEmail } from "@/lib/emails";
 
+function buildEmailData(data: {
+  clientName: string;
+  clientEmail: string;
+  clientPhone: string;
+  startTime: Date;
+  bookingId: string;
+}, service: { name: string; durationMinutes: number; price: number }, business: { name: string; logoUrl: string | null; slug: string; user: { email: string } }, paymentStatus: "paid" | "pending" | "free") {
+  return {
+    clientName: data.clientName,
+    clientEmail: data.clientEmail,
+    clientPhone: data.clientPhone,
+    serviceName: service.name,
+    serviceDuration: service.durationMinutes,
+    servicePrice: service.price,
+    businessName: business.name,
+    businessEmail: business.user.email,
+    businessLogoUrl: business.logoUrl,
+    businessSlug: business.slug,
+    startTime: data.startTime,
+    bookingId: data.bookingId,
+    paymentStatus,
+  };
+}
+
 export async function createBookingIntent(data: {
   businessId: string;
   serviceId: string;
@@ -46,16 +70,12 @@ export async function createBookingIntent(data: {
     });
 
     // Send emails since it's confirmed
-    const emailData = {
-      clientName: data.clientName,
-      clientEmail: data.clientEmail,
-      clientPhone: data.clientPhone,
-      serviceName: service.name,
-      businessName: business.name,
-      businessEmail: business.user.email,
-      startTime: data.startTime,
-      bookingId: booking.id,
-    };
+    const emailData = buildEmailData(
+      { ...data, bookingId: booking.id },
+      service,
+      business,
+      service.price > 0 ? "pending" : "free"
+    );
     await Promise.all([
       sendClientConfirmationEmail(emailData),
       sendBusinessNotificationEmail(emailData)
@@ -94,16 +114,12 @@ export async function createBookingIntent(data: {
       data: { status: "confirmed" }
     });
 
-    const emailData = {
-      clientName: data.clientName,
-      clientEmail: data.clientEmail,
-      clientPhone: data.clientPhone,
-      serviceName: service.name,
-      businessName: business.name,
-      businessEmail: business.user.email,
-      startTime: data.startTime,
-      bookingId: booking.id,
-    };
+    const emailData = buildEmailData(
+      { ...data, bookingId: booking.id },
+      service,
+      business,
+      "free"
+    );
     await Promise.all([
       sendClientConfirmationEmail(emailData),
       sendBusinessNotificationEmail(emailData)

@@ -54,10 +54,15 @@ export async function POST(req: NextRequest) {
             clientEmail: booking.clientEmail,
             clientPhone: booking.clientPhone,
             serviceName: booking.service.name,
+            serviceDuration: booking.service.durationMinutes,
+            servicePrice: booking.service.price,
             businessName: booking.business.name,
             businessEmail: booking.business.user.email,
+            businessLogoUrl: booking.business.logoUrl,
+            businessSlug: booking.business.slug,
             startTime: booking.startTime,
             bookingId: booking.id,
+            paymentStatus: "paid" as const,
           };
           
           await Promise.all([
