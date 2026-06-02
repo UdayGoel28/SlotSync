@@ -4,6 +4,7 @@ import { stripe } from "@/lib/stripe";
 import { addMinutes } from "date-fns";
 import { sendClientConfirmationEmail, sendBusinessNotificationEmail } from "@/lib/emails";
 import { sendBookingConfirmationSms } from "@/lib/sms";
+import { inngest } from "@/lib/inngest";
 
 function buildEmailData(data: {
   clientName: string;
@@ -91,6 +92,27 @@ export async function createBookingIntent(data: {
       }),
     ]);
 
+    // Dispatch Inngest event to schedule reminders
+    await inngest.send({
+      name: "booking/created",
+      data: {
+        bookingId: booking.id,
+        clientName: data.clientName,
+        clientEmail: data.clientEmail,
+        clientPhone: data.clientPhone,
+        serviceName: service.name,
+        serviceDuration: service.durationMinutes,
+        servicePrice: service.price,
+        businessName: business.name,
+        businessEmail: business.user.email,
+        businessLogoUrl: business.logoUrl,
+        businessSlug: business.slug,
+        googlePlaceId: business.googlePlaceId,
+        startTime: data.startTime.toISOString(),
+        endTime: endTime.toISOString(),
+      },
+    });
+
     return { success: true, bookingId: booking.id };
   }
 
@@ -143,6 +165,27 @@ export async function createBookingIntent(data: {
         bookingId: booking.id,
       }),
     ]);
+
+    // Dispatch Inngest event to schedule reminders
+    await inngest.send({
+      name: "booking/created",
+      data: {
+        bookingId: booking.id,
+        clientName: data.clientName,
+        clientEmail: data.clientEmail,
+        clientPhone: data.clientPhone,
+        serviceName: service.name,
+        serviceDuration: service.durationMinutes,
+        servicePrice: service.price,
+        businessName: business.name,
+        businessEmail: business.user.email,
+        businessLogoUrl: business.logoUrl,
+        businessSlug: business.slug,
+        googlePlaceId: business.googlePlaceId,
+        startTime: data.startTime.toISOString(),
+        endTime: endTime.toISOString(),
+      },
+    });
 
     return { success: true, bookingId: booking.id, skippedPayment: true };
   }

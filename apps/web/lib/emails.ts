@@ -297,3 +297,150 @@ export async function sendBookingReminderEmail(data: BookingEmailData) {
     return { error: err };
   }
 }
+
+/* ═══════════════════════════════════════════════════════
+   4. REVIEW REQUEST EMAIL (1hr after appointment)
+   — Triggered by Inngest
+═══════════════════════════════════════════════════════ */
+export type ReviewRequestEmailData = {
+  clientName: string;
+  clientEmail: string;
+  businessName: string;
+  businessLogoUrl?: string | null;
+  googlePlaceId: string;
+};
+
+export async function sendReviewRequestEmail(data: ReviewRequestEmailData) {
+  const reviewLink = `https://search.google.com/local/writereview?placeid=${data.googlePlaceId}`;
+
+  const html = emailWrapper(`
+    ${logoHeader(data.businessName, data.businessLogoUrl)}
+    <tr><td style="padding:24px 32px 0; text-align:center;">
+      <h1 style="margin:0 0 4px; font-size:22px; font-weight:400; font-family:'Georgia',serif; color:${TEXT_COLOR};">How was your visit?</h1>
+      <p style="margin:0; font-size:14px; color:${TEXT_MUTED};">Hi ${data.clientName}, we hope you had a great experience!</p>
+    </td></tr>
+    <tr><td style="padding:24px 32px 8px; text-align:center;">
+      <p style="font-size:14px; color:${TEXT_MUTED}; line-height:1.6;">Your feedback helps other clients find us and helps us grow. It only takes 30 seconds — we'd really appreciate it 🙏</p>
+    </td></tr>
+    <tr><td style="padding:0 32px 32px; text-align:center;">
+      <a href="${reviewLink}" style="display:inline-block; background:${BRAND_COLOR}; color:#ffffff; padding:14px 32px; border-radius:10px; text-decoration:none; font-size:14px; font-weight:600;">
+        Leave a Google Review ⭐
+      </a>
+    </td></tr>
+  `);
+
+  try {
+    const { data: response, error } = await resend.emails.send({
+      from: `${data.businessName} via SlotSync <${SENDER_EMAIL}>`,
+      to: [data.clientEmail],
+      subject: `How was your visit to ${data.businessName}? ⭐`,
+      html,
+    });
+    if (error) console.error("Review request email error:", error);
+    return { response, error };
+  } catch (err) {
+    console.error("Review request email exception:", err);
+    return { error: err };
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   5. DAILY SUMMARY EMAIL (8am every day)
+   — Triggered by Inngest cron
+═══════════════════════════════════════════════════════ */
+export type DailySummaryEmailData = {
+  businessName: string;
+  businessEmail: string;
+  businessLogoUrl?: string | null;
+  todayBookings: Array<{ clientName: string; serviceName: string; startTime: Date; price: number }>;
+  tomorrowBookings: Array<{ clientName: string; serviceName: string; startTime: Date }>;
+  todayRevenue: number;
+};
+
+export async function sendDailySummaryEmail(data: DailySummaryEmailData) {
+  const today = new Date();
+  const dateLabel = format(today, "EEEE, MMMM do");
+
+  const todayRows = data.todayBookings.length > 0
+    ? data.todayBookings.map(b =>
+        `<tr>
+          <td style="padding:6px 0; font-size:13px; color:${TEXT_COLOR};">${format(new Date(b.startTime), "h:mm a")}</td>
+          <td style="padding:6px 0; font-size:13px; color:${TEXT_COLOR};">${b.clientName}</td>
+          <td style="padding:6px 0; font-size:13px; color:${TEXT_MUTED};">${b.serviceName}</td>
+          <td style="padding:6px 0; font-size:13px; color:${BRAND_COLOR}; text-align:right;">$${b.price.toFixed(2)}</td>
+        </tr>`
+      ).join("")
+    : `<tr><td colspan="4" style="padding:12px 0; font-size:13px; color:${TEXT_MUTED}; text-align:center;">No bookings today</td></tr>`;
+
+  const tomorrowRows = data.tomorrowBookings.length > 0
+    ? data.tomorrowBookings.map(b =>
+        `<tr>
+          <td style="padding:6px 0; font-size:13px; color:${TEXT_COLOR};">${format(new Date(b.startTime), "h:mm a")}</td>
+          <td style="padding:6px 0; font-size:13px; color:${TEXT_COLOR};">${b.clientName}</td>
+          <td style="padding:6px 0; font-size:13px; color:${TEXT_MUTED};">${b.serviceName}</td>
+        </tr>`
+      ).join("")
+    : `<tr><td colspan="3" style="padding:12px 0; font-size:13px; color:${TEXT_MUTED}; text-align:center;">No bookings tomorrow yet</td></tr>`;
+
+  const html = emailWrapper(`
+    ${logoHeader(data.businessName, data.businessLogoUrl)}
+    <tr><td style="padding:24px 32px 0; text-align:center;">
+      <h1 style="margin:0 0 4px; font-size:22px; font-weight:400; font-family:'Georgia',serif; color:${TEXT_COLOR};">Your daily summary</h1>
+      <p style="margin:0; font-size:14px; color:${TEXT_MUTED};">${dateLabel}</p>
+    </td></tr>
+
+    <!-- Stats row -->
+    <tr><td style="padding:24px 32px 0;">
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="width:50%; padding-right:8px;">
+            <div style="background:${BG_COLOR}; border-radius:12px; padding:16px; text-align:center; border:1px solid #f0ede8;">
+              <p style="margin:0 0 4px; font-size:28px; font-weight:600; color:${BRAND_COLOR};">${data.todayBookings.length}</p>
+              <p style="margin:0; font-size:12px; color:${TEXT_MUTED};">Bookings Today</p>
+            </div>
+          </td>
+          <td style="width:50%; padding-left:8px;">
+            <div style="background:${BG_COLOR}; border-radius:12px; padding:16px; text-align:center; border:1px solid #f0ede8;">
+              <p style="margin:0 0 4px; font-size:28px; font-weight:600; color:${BRAND_COLOR};">$${data.todayRevenue.toFixed(2)}</p>
+              <p style="margin:0; font-size:12px; color:${TEXT_MUTED};">Revenue Today</p>
+            </div>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+
+    <!-- Today's bookings -->
+    <tr><td style="padding:20px 32px 0;">
+      <p style="margin:0 0 10px; font-size:11px; text-transform:uppercase; letter-spacing:0.08em; color:${TEXT_MUTED}; font-weight:600;">Today's Appointments</p>
+      <table width="100%" cellpadding="0" cellspacing="0" style="background:${BG_COLOR}; border-radius:12px; border:1px solid #f0ede8;">
+        <tr><td style="padding:12px 20px;">
+          <table width="100%" cellpadding="0" cellspacing="0">${todayRows}</table>
+        </td></tr>
+      </table>
+    </td></tr>
+
+    <!-- Tomorrow's bookings -->
+    <tr><td style="padding:20px 32px 32px;">
+      <p style="margin:0 0 10px; font-size:11px; text-transform:uppercase; letter-spacing:0.08em; color:${TEXT_MUTED}; font-weight:600;">Tomorrow's Appointments</p>
+      <table width="100%" cellpadding="0" cellspacing="0" style="background:${BG_COLOR}; border-radius:12px; border:1px solid #f0ede8;">
+        <tr><td style="padding:12px 20px;">
+          <table width="100%" cellpadding="0" cellspacing="0">${tomorrowRows}</table>
+        </td></tr>
+      </table>
+    </td></tr>
+  `);
+
+  try {
+    const { data: response, error } = await resend.emails.send({
+      from: `SlotSync <${SENDER_EMAIL}>`,
+      to: [data.businessEmail],
+      subject: `Your daily summary — ${dateLabel}`,
+      html,
+    });
+    if (error) console.error("Daily summary email error:", error);
+    return { response, error };
+  } catch (err) {
+    console.error("Daily summary email exception:", err);
+    return { error: err };
+  }
+}

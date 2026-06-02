@@ -5,6 +5,7 @@ import { prisma } from "@slotsync/database";
 import Stripe from "stripe";
 import { sendClientConfirmationEmail, sendBusinessNotificationEmail } from "@/lib/emails";
 import { sendBookingConfirmationSms } from "@/lib/sms";
+import { inngest } from "@/lib/inngest";
 
 export async function POST(req: NextRequest) {
   const body = await req.text();
@@ -77,6 +78,26 @@ export async function POST(req: NextRequest) {
               googlePlaceId: booking.business.googlePlaceId,
               startTime: booking.startTime,
               bookingId: booking.id,
+            }),
+            // Schedule Inngest reminders for this booking
+            inngest.send({
+              name: "booking/created",
+              data: {
+                bookingId: booking.id,
+                clientName: booking.clientName,
+                clientEmail: booking.clientEmail,
+                clientPhone: booking.clientPhone,
+                serviceName: booking.service.name,
+                serviceDuration: booking.service.durationMinutes,
+                servicePrice: booking.service.price,
+                businessName: booking.business.name,
+                businessEmail: booking.business.user.email,
+                businessLogoUrl: booking.business.logoUrl,
+                businessSlug: booking.business.slug,
+                googlePlaceId: booking.business.googlePlaceId,
+                startTime: booking.startTime.toISOString(),
+                endTime: booking.endTime.toISOString(),
+              },
             }),
           ]);
         } else {
