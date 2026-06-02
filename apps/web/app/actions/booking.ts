@@ -3,6 +3,7 @@ import { prisma } from "@slotsync/database";
 import { stripe } from "@/lib/stripe";
 import { addMinutes } from "date-fns";
 import { sendClientConfirmationEmail, sendBusinessNotificationEmail } from "@/lib/emails";
+import { sendBookingConfirmationSms } from "@/lib/sms";
 
 function buildEmailData(data: {
   clientName: string;
@@ -78,7 +79,16 @@ export async function createBookingIntent(data: {
     );
     await Promise.all([
       sendClientConfirmationEmail(emailData),
-      sendBusinessNotificationEmail(emailData)
+      sendBusinessNotificationEmail(emailData),
+      sendBookingConfirmationSms({
+        clientName: data.clientName,
+        clientPhone: data.clientPhone,
+        serviceName: service.name,
+        businessName: business.name,
+        googlePlaceId: business.googlePlaceId,
+        startTime: data.startTime,
+        bookingId: booking.id,
+      }),
     ]);
 
     return { success: true, bookingId: booking.id };
@@ -122,7 +132,16 @@ export async function createBookingIntent(data: {
     );
     await Promise.all([
       sendClientConfirmationEmail(emailData),
-      sendBusinessNotificationEmail(emailData)
+      sendBusinessNotificationEmail(emailData),
+      sendBookingConfirmationSms({
+        clientName: data.clientName,
+        clientPhone: data.clientPhone,
+        serviceName: service.name,
+        businessName: business.name,
+        googlePlaceId: business.googlePlaceId,
+        startTime: data.startTime,
+        bookingId: booking.id,
+      }),
     ]);
 
     return { success: true, bookingId: booking.id, skippedPayment: true };

@@ -4,6 +4,7 @@ import { stripe } from "@/lib/stripe";
 import { prisma } from "@slotsync/database";
 import Stripe from "stripe";
 import { sendClientConfirmationEmail, sendBusinessNotificationEmail } from "@/lib/emails";
+import { sendBookingConfirmationSms } from "@/lib/sms";
 
 export async function POST(req: NextRequest) {
   const body = await req.text();
@@ -67,7 +68,16 @@ export async function POST(req: NextRequest) {
           
           await Promise.all([
             sendClientConfirmationEmail(emailData),
-            sendBusinessNotificationEmail(emailData)
+            sendBusinessNotificationEmail(emailData),
+            sendBookingConfirmationSms({
+              clientName: booking.clientName,
+              clientPhone: booking.clientPhone,
+              serviceName: booking.service.name,
+              businessName: booking.business.name,
+              googlePlaceId: booking.business.googlePlaceId,
+              startTime: booking.startTime,
+              bookingId: booking.id,
+            }),
           ]);
         } else {
           console.log(`⚠️ Payment succeeded for intent ${paymentIntent.id} but no booking found.`);
