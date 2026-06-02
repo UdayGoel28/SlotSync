@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Logo } from "@/components/shared/Logo";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -34,29 +33,41 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-50 via-white to-brand-100 px-4">
-      <div className="w-full max-w-md space-y-8">
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden grain-overlay">
+      {/* Gradient mesh background */}
+      <div className="fixed inset-0 -z-10">
+        <div className="absolute inset-0 bg-gradient-to-br from-sage-100 via-cream-50 to-cream-100" />
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-coral-50/50 rounded-full blur-[100px] -translate-y-1/4 translate-x-1/4" />
+        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-sage-100/60 rounded-full blur-[80px] translate-y-1/4 -translate-x-1/4" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-coral-100/30 rounded-full blur-[60px]" />
+      </div>
+
+      <div className="w-full max-w-md px-6 space-y-8">
+        {/* Logo */}
         <div className="text-center">
-          <Link href="/" className="inline-flex items-center gap-2 mb-6">
-            <Logo />
-            <span className="text-2xl font-bold bg-gradient-to-r from-brand-600 to-brand-400 bg-clip-text text-transparent">
+          <Link href="/" className="inline-flex items-center gap-2.5 mb-8">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-coral-200 to-coral-400 flex items-center justify-center text-white font-display text-xl font-semibold">
+              S
+            </div>
+            <span className="text-2xl font-display font-semibold text-[#2C2C2C] tracking-wide">
               SlotSync
             </span>
           </Link>
-          <h1 className="text-2xl font-bold tracking-tight">Welcome back</h1>
-          <p className="text-muted-foreground mt-2">
+          <h1 className="font-display text-3xl font-light text-[#2C2C2C] mb-2">Welcome back</h1>
+          <p className="text-sm text-[#2C2C2C]/40">
             Sign in to your account to continue
           </p>
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-4 bg-white p-8 rounded-xl shadow-lg border">
+        {/* Glass card form */}
+        <form onSubmit={handleLogin} className="glass-card rounded-2xl p-8 space-y-5 shadow-xl shadow-sage-200/20">
           {error && (
-            <div className="p-3 text-sm text-red-600 bg-red-50 rounded-lg">
+            <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl">
               {error}
             </div>
           )}
           <div>
-            <label htmlFor="email" className="block text-sm font-medium mb-1.5">
+            <label htmlFor="email" className="block text-xs font-semibold text-[#2C2C2C]/40 uppercase tracking-wider mb-1.5">
               Email
             </label>
             <input
@@ -64,13 +75,13 @@ export default function LoginPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail((e.target as HTMLInputElement).value)}
-              className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="w-full h-12 rounded-xl bg-white/50 border border-sage-200/50 px-4 text-[#2C2C2C] text-sm focus:outline-none focus:border-[#D4846A] focus:ring-2 focus:ring-coral-100 transition-all placeholder:text-[#2C2C2C]/25"
               placeholder="you@example.com"
               required
             />
           </div>
           <div>
-            <label htmlFor="password" className="block text-sm font-medium mb-1.5">
+            <label htmlFor="password" className="block text-xs font-semibold text-[#2C2C2C]/40 uppercase tracking-wider mb-1.5">
               Password
             </label>
             <input
@@ -78,7 +89,7 @@ export default function LoginPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword((e.target as HTMLInputElement).value)}
-              className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="w-full h-12 rounded-xl bg-white/50 border border-sage-200/50 px-4 text-[#2C2C2C] text-sm focus:outline-none focus:border-[#D4846A] focus:ring-2 focus:ring-coral-100 transition-all placeholder:text-[#2C2C2C]/25"
               placeholder="••••••••"
               required
             />
@@ -86,15 +97,15 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-brand-600 py-2.5 text-sm font-medium text-white hover:bg-brand-700 transition-colors disabled:opacity-50"
+            className="w-full bg-[#D4846A] hover:bg-[#C07558] text-white py-3.5 rounded-xl text-sm font-medium transition-all hover:shadow-lg hover:shadow-coral-200/30 active:scale-[0.98] disabled:opacity-50"
           >
             {loading ? "Signing in..." : "Sign in"}
           </button>
         </form>
 
-        <p className="text-center text-sm text-muted-foreground">
+        <p className="text-center text-sm text-[#2C2C2C]/40">
           Don&apos;t have an account?{" "}
-          <Link href="/signup" className="text-brand-600 hover:underline font-medium">
+          <Link href="/signup" className="text-[#D4846A] hover:text-[#C07558] font-medium transition-colors">
             Sign up
           </Link>
         </p>
