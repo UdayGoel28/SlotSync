@@ -134,3 +134,27 @@ export async function updateBusinessSettings(data: { bufferMinutes: number; book
     return { error: "Failed to update business settings" };
   }
 }
+
+// --- REVIEW SETTINGS ---
+
+export async function updateReviewSettings(data: {
+  googlePlaceId: string | null;
+  reviewsEnabled: boolean;
+}) {
+  const business = await getBusinessForUser();
+  if (!business) return { error: "Business not found" };
+
+  try {
+    await prisma.business.update({
+      where: { id: business.id },
+      data: {
+        googlePlaceId: data.googlePlaceId || null,
+        reviewsEnabled: data.reviewsEnabled,
+      },
+    });
+    revalidatePath("/reviews");
+    return { success: true };
+  } catch (error) {
+    return { error: "Failed to update review settings" };
+  }
+}
