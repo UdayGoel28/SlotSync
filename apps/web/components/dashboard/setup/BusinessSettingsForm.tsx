@@ -23,7 +23,7 @@ export function BusinessSettingsForm({ business }: { business: Business }) {
       bookingWindowDays: windowDays,
       cancellationHours: cancelHours
     });
-    
+
     if (res.success) {
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
@@ -42,8 +42,8 @@ export function BusinessSettingsForm({ business }: { business: Business }) {
         <div>
           <label className="block text-sm font-medium mb-1.5">Buffer Time Between Appointments</label>
           <p className="text-xs text-muted-foreground mb-2">Give yourself time to clean up or take a break before the next client.</p>
-          <select 
-            value={buffer} 
+          <select
+            value={buffer}
             onChange={e => setBuffer(Number(e.target.value))}
             className="w-full border rounded-lg px-3 py-2 text-sm bg-white"
           >
@@ -59,11 +59,11 @@ export function BusinessSettingsForm({ business }: { business: Business }) {
           <label className="block text-sm font-medium mb-1.5">Booking Window</label>
           <p className="text-xs text-muted-foreground mb-2">How far in advance can clients book an appointment?</p>
           <div className="flex items-center gap-3">
-            <input 
-              type="number" 
-              min="1" 
+            <input
+              type="number"
+              min="1"
               max="365"
-              value={windowDays} 
+              value={windowDays}
               onChange={e => setWindowDays(Number(e.target.value))}
               className="w-24 border rounded-lg px-3 py-2 text-sm"
             />
@@ -75,10 +75,10 @@ export function BusinessSettingsForm({ business }: { business: Business }) {
           <label className="block text-sm font-medium mb-1.5">Cancellation Policy</label>
           <p className="text-xs text-muted-foreground mb-2">Minimum notice required for a client to cancel or reschedule.</p>
           <div className="flex items-center gap-3">
-            <input 
-              type="number" 
+            <input
+              type="number"
               min="0"
-              value={cancelHours} 
+              value={cancelHours}
               onChange={e => setCancelHours(Number(e.target.value))}
               className="w-24 border rounded-lg px-3 py-2 text-sm"
             />
@@ -87,9 +87,9 @@ export function BusinessSettingsForm({ business }: { business: Business }) {
         </div>
 
         <div className="pt-2">
-          <button 
-            disabled={loading} 
-            onClick={handleSave} 
+          <button
+            disabled={loading}
+            onClick={handleSave}
             className="bg-slate-900 text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 disabled:opacity-50 transition-colors"
           >
             {loading ? "Saving..." : saved ? "Saved!" : "Save Settings"}

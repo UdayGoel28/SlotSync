@@ -18,7 +18,9 @@ export type BookingEmailData = {
   paymentStatus?: "paid" | "pending" | "free";
 };
 
-const SENDER_EMAIL = "onboarding@resend.dev";
+const SENDER_EMAIL = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
+const isTestMode = !process.env.RESEND_FROM_EMAIL;
+const getToAddress = (originalTo: string) => isTestMode ? ["ugoel285@gmail.com"] : [originalTo];
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://slot-sync01.vercel.app";
 
 /* ─── Shared styles ─── */
@@ -144,7 +146,7 @@ export async function sendClientConfirmationEmail(data: BookingEmailData) {
   try {
     const { data: response, error } = await resend.emails.send({
       from: `${data.businessName} via SlotSync <${SENDER_EMAIL}>`,
-      to: [data.clientEmail],
+      to: getToAddress(data.clientEmail),
       subject: `Your booking is confirmed ✓ — ${data.businessName}`,
       html,
     });
@@ -229,7 +231,7 @@ export async function sendBusinessNotificationEmail(data: BookingEmailData) {
   try {
     const { data: response, error } = await resend.emails.send({
       from: `SlotSync <${SENDER_EMAIL}>`,
-      to: [data.businessEmail],
+      to: getToAddress(data.businessEmail),
       subject: `New booking from ${data.clientName}`,
       html,
     });
@@ -286,7 +288,7 @@ export async function sendBookingReminderEmail(data: BookingEmailData) {
   try {
     const { data: response, error } = await resend.emails.send({
       from: `${data.businessName} via SlotSync <${SENDER_EMAIL}>`,
-      to: [data.clientEmail],
+      to: getToAddress(data.clientEmail),
       subject: `Reminder: Your appointment tomorrow`,
       html,
     });
@@ -332,7 +334,7 @@ export async function sendReviewRequestEmail(data: ReviewRequestEmailData) {
   try {
     const { data: response, error } = await resend.emails.send({
       from: `${data.businessName} via SlotSync <${SENDER_EMAIL}>`,
-      to: [data.clientEmail],
+      to: getToAddress(data.clientEmail),
       subject: `How was your visit to ${data.businessName}? ⭐`,
       html,
     });
@@ -433,7 +435,7 @@ export async function sendDailySummaryEmail(data: DailySummaryEmailData) {
   try {
     const { data: response, error } = await resend.emails.send({
       from: `SlotSync <${SENDER_EMAIL}>`,
-      to: [data.businessEmail],
+      to: getToAddress(data.businessEmail),
       subject: `Your daily summary — ${dateLabel}`,
       html,
     });
