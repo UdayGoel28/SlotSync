@@ -24,6 +24,9 @@ model Business {
   slug              String    @unique
   category          String
   description       String?
+  address           String?
+  phone             String?
+  website           String?
   logoUrl           String?
   coverUrl          String?
   timezone          String

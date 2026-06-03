@@ -135,7 +135,17 @@ export async function updateBusinessSettings(data: { bufferMinutes: number; book
   }
 }
 
-export async function updateBusinessProfile(data: { name: string; description?: string; logoUrl?: string; coverUrl?: string }) {
+export async function updateBusinessProfile(data: { 
+  name: string; 
+  category: string;
+  description?: string; 
+  address?: string;
+  phone?: string;
+  website?: string;
+  logoUrl?: string; 
+  coverUrl?: string;
+  googlePlaceId?: string;
+}) {
   const business = await getBusinessForUser();
   if (!business) return { error: "Business not found" };
 
@@ -144,16 +154,40 @@ export async function updateBusinessProfile(data: { name: string; description?: 
       where: { id: business.id },
       data: {
         name: data.name,
+        category: data.category,
         description: data.description,
+        address: data.address,
+        phone: data.phone,
+        website: data.website,
         logoUrl: data.logoUrl,
         coverUrl: data.coverUrl,
+        googlePlaceId: data.googlePlaceId,
       }
     });
-    revalidatePath("/setup");
+    revalidatePath("/profile");
+    revalidatePath(`/business/${business.slug}`);
     revalidatePath(`/book/${business.slug}`);
     return { success: true };
   } catch (error) {
     return { error: "Failed to update business profile" };
+  }
+}
+
+export async function updateWorkingHours(workingHours: any) {
+  const business = await getBusinessForUser();
+  if (!business) return { error: "Business not found" };
+
+  try {
+    await prisma.business.update({
+      where: { id: business.id },
+      data: { workingHours }
+    });
+    revalidatePath("/profile");
+    revalidatePath(`/business/${business.slug}`);
+    revalidatePath(`/book/${business.slug}`);
+    return { success: true };
+  } catch (error) {
+    return { error: "Failed to update working hours" };
   }
 }
 
