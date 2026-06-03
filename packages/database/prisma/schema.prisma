@@ -94,3 +94,14 @@ model Waitlist {
   country      String
   createdAt    DateTime @default(now())
 }
+
+model ClientNote {
+  id          String   @id @default(uuid())
+  businessId  String
+  clientEmail String
+  notes       String   @default("")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([businessId, clientEmail])
+}
