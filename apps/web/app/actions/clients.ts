@@ -47,3 +47,23 @@ export async function saveClientNote(clientEmail: string, notes: string) {
 
   return { success: true };
 }
+
+export async function updateCustomerInfo(originalEmail: string, data: { name: string; phone: string }) {
+  try {
+    // Update all bookings associated with this email
+    await prisma.booking.updateMany({
+      where: { clientEmail: originalEmail },
+      data: {
+        clientName: data.name,
+        clientPhone: data.phone,
+      }
+    });
+    
+    // We don't update the email itself because the portal URL depends on the email as the ID.
+    // Changing the email would break their current portal link.
+
+    return { success: true };
+  } catch (err) {
+    return { error: "Failed to update contact info" };
+  }
+}
