@@ -58,7 +58,11 @@ export default async function BookingPage({ params }: BookingPageProps) {
         />
 
         <div className="mb-12">
-          <BookingFlow business={business} />
+          <BookingFlow business={{
+            ...business,
+            bookingWindowDays: business.bookingWindowDays ?? 30,
+            bufferMinutes: business.bufferMinutes ?? 0,
+          }} />
         </div>
 
         {reviews.length > 0 && (
