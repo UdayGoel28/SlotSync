@@ -93,8 +93,8 @@ model Booking {
 model Waitlist {
   id           String   @id @default(uuid())
   email        String   @unique
-  businessType String
-  country      String
+  businessType String?
+  country      String?
   createdAt    DateTime @default(now())
 }
 
